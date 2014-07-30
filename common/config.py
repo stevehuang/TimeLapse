@@ -55,12 +55,7 @@ class Opt (object):
 
 
     def add_opt_to_cli (self, parser):
-        cli_name = self.group
-
-        if len(self.sub_group) > 0:
-            cli_name = cli_name + '.' + self.sub_group
-
-        cli_name = cli_name + ':::' + self.name
+        cli_name = self.name
 
         namelist = list()
         if (self.short is not None):
@@ -156,7 +151,9 @@ class ConfigOptions:
     # each item is an option (class Opt)
         self.groupOpts = dict()
         #self.args = list()
-        self.parser = argparse.ArgumentParser(description='options for GarageEye program')
+        self.parser = dict()
+        self.parser['app'] = argparse.ArgumentParser(description='options for GarageEye program', add_help=False)
+        self.parser['app'].add_argument('-h', '--help', action='store_true', help='show this help message and exit', default=False)
 
     def __getattr__(self, name):
         for key, opt in self.groupOpts.iteritems():
@@ -167,21 +164,24 @@ class ConfigOptions:
     def _add_opts_to_cli_list_ (self):
         # create a parser cli list from the groupOpts list
         for key,opt in self.groupOpts.iteritems():
-            opt.add_opt_to_cli(self.parser)
+            opt.add_opt_to_cli(self.parser[key[0]])
 
     def _parse_config_files_ (self, filename):
         # parse
         ini_parser = ConfigParser.ConfigParser()
         ini_parser.read(filename)
-        return_val = list()
+        args = dict()
         for section in ini_parser.sections():
             items = ini_parser.items(section)
             for name, value in items:
-                return_val.append('--' + section+':::'+name)
-                return_val.extend(value.split())
+                if not section in args:
+                    args[section] = list()
+                args[section].append('--' + name)
+                args[section].extend(value.split())
+
 
         ini_parser = None
-        return return_val
+        return args
 
     def parseArgs (self, args=None, config_files=None, validate_values=False):
         # build a list of the cli options available from the current list
@@ -191,30 +191,75 @@ class ConfigOptions:
         # expand vars and user of all strings
         if len(args)==0:
             return None
-        cli_args = list()
-        self._add_opts_to_cli_list_()
+        cli_args = dict()
+        temp_args = list()
+        self._add_opts_to_cli_list_() # fill in the parsers based on opts
+        consume_conf = False
         for index, arg in enumerate(args):
-            if arg == '--config_file' or arg.startswith('--config_file=') or arg == '-c':
-                items = self._parse_config_files_(args[index + 1])
-                items = [os.path.expanduser(x) for x in items]
-                items = [os.path.expandvars(x) for x in items]
-                cli_args.extend(items)
-            else:
+            if arg == '--config_file' or arg.startswith('--config_file') or arg == '-c':
+                consume_conf=True
+
+            if consume_conf==True and arg.endswith('.conf'):
+                items = self._parse_config_files_(args[index])
+                for groupname in items:
+                    items[groupname] = [os.path.expanduser(x) for x in items[groupname]]
+                    items[groupname] = [os.path.expandvars(x) for x in items[groupname]]
+                    if not groupname in cli_args:
+                        cli_args[groupname] = list()
+                    cli_args[groupname].extend(items[groupname])
+                consume_conf=False
+            elif consume_conf==False:
                 val = os.path.expanduser(args[index])
                 val = os.path.expandvars(val)
-                cli_args.append(val)
+                temp_args.append(val)
+            else: # this means the conf file is not the right extension
+                logger.warning("Expected file with conf extension. File not parsed.")
 
+
+        #  split the arguments into the groups
+        group_found = False
+        group_Name = 'app'
+        for arg in temp_args:
+            if arg=="--group" or arg.startswith('--group') or arg=='-g':
+                group_found = True
+                print "group found"
+                continue
+            if group_found == True:
+                group_Name = arg
+                print "group name set to " + group_Name
+                group_found = False
+                continue
+            if not group_Name in cli_args:
+                cli_args[group_Name] = list()
+            cli_args[group_Name].append(arg)
 
         # parse all the parameters
-        known_args, unknown = self.parser.parse_known_args(cli_args)
+        known_args = dict()
+        unknown_args = dict()
+        for groupname in self.parser:
+            if groupname in cli_args:
+                known, unknown = self.parser[groupname].parse_known_args(cli_args[groupname])
+                if not groupname in known_args:
+                    known_args[groupname] = known
+                    unknown_args[groupname] = unknown
+                else:
+                    known_args[groupname].update(known)
+                    unknown_args[groupname].update(unknown)
+
+        # if help was called, print out
+        if known_args['app'].help:
+            for groupname in self.parser:
+                self.parser[groupname].print_help()
+            self.parser['app'].exit()
 
         #synch the namespace values with groupOpts
-        for key, opt in vars(known_args).iteritems():
-            group, name = key.split(':::')
-            if self.groupOpts.has_key((group,name)):
-                self.groupOpts[(group,name)]._set_(opt)
-            else:
-                logger.warning("Missing key pair (%s, %s)" % (group,name))
+        for groupname in known_args:
+            for name, value in vars(known_args[groupname]).iteritems():
+                if self.groupOpts.has_key((groupname,name)):
+                    self.groupOpts[(groupname,name)]._set_(value)
+                else:
+                    logger.warning("Missing key pair (%s, %s)" % (name,value)) # 'help' will not be here. it's expected
+                    #print ("Missing key pair (%s, %s)" % (name,value))
         return known_args
 
     def _log_options_ (self):
@@ -237,14 +282,16 @@ class ConfigOptions:
                  #logger.debug ("opt.module = %s" % mod)
                  # check if the opt.name in the group exists.
                 groupname = opt.group
-                if len(opt.sub_group) > 0:
-                    groupname = groupname + '.' + opt.sub_group
                 if (groupname,opt.name) in self.groupOpts:
                     logger.warning("The name %s already exists. Option will be overwritten." % opt.name)
                     self.groupOpts[(groupname,opt.name)] = opt
+                    if not (groupname in self.parser):
+                        self.parser[groupname] = argparse.ArgumentParser(description='options for the group ' + groupname, add_help=False)
                 else:
                     # the group does not exist. Add the first (key, item) pair
                     self.groupOpts[groupname, opt.name]=opt
+                    if not (groupname in self.parser):
+                        self.parser[groupname] = argparse.ArgumentParser(description='options for the group '+ groupname, add_help=False)
             #print self.groupOpts.items()
 
     def importOpt (self, module, name, group='app'):

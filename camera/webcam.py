@@ -7,17 +7,16 @@ from types import *
 
 Options = [
     Conf.StrOpt(name    = 'use',
-                group   = 'camera',
+                group   = 'camera.fswebcam',
                 default = 'camera.camera:WebCam.factory',
-                help    = 'point to the camera python module',
-                sub_group = 'fswebcam'),
+                help    = 'point to the camera python module'),
     Conf.FileOpt(name    = 'config_file',
-                 group   = 'camera',
+                 group   = 'camera.fswebcam',
                  default = '$HOME/.garageeye/fswebcam.conf',
                  help    = 'full path to webcam configuration file',
                  sub_group = 'fswebcam'),
     Conf.DirOpt(name     = 'path',
-                 group   = 'camera',
+                 group   = 'camera.fswebcam',
                  default = '$HOME/.garageeye/camera',
                  help    = 'full path to webcam files',
                  sub_group = 'fswebcam')

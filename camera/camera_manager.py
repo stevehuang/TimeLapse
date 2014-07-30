@@ -26,11 +26,13 @@ class CameraManager (object):
         # list of camera:names
         for cam_name in camera_names:
             groupName = 'camera.' + cam_name
+            print groupName
             use = CONF.importOpt(module='camera', name='use', group=groupName)
             name_list = CONF.get_opt_list(groupName)
             conf_vars = dict()
             for name in name_list:
                 conf_vars[name]= CONF.importOpt(module='camera', name=name, group=groupName)
+            print use
             self.cameras[cam_name] = call_use_function(use, conf_vars)
         print self.cameras
 

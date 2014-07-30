@@ -18,7 +18,11 @@ import common.config as Conf
 import os, sys, signal, errno
 
 CONF = Conf.Config
-Options = [ Conf.FileOpt(name='config_file',
+Options = [ Conf.StrOpt(name='group',
+                        short='g',
+                        default='app',
+                        help='the group name'),
+            Conf.FileOpt(name='config_file',
                          short='f',
                          default='./garageCam.conf',
                          help='configuration file used by GarageEye program')

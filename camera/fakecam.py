@@ -4,12 +4,12 @@ import camera
 
 Options = [
     Conf.StrOpt(name    = 'use',
-                group   = 'camera',
+                group   = 'camera.fakecam',
                 default = 'camera.fakecam:FakeCam.factory',
                 help    = 'point to the fake camera python module',
                 sub_group = 'fakecam'),
     Conf.DirOpt(name     = 'path',
-                 group   = 'camera',
+                 group   = 'camera.fakecam',
                  default = '$HOME/.garageeye/camera',
                  help    = 'full path to webcam files',
                  sub_group = 'fakecam')
