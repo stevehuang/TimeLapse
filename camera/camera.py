@@ -21,4 +21,4 @@ class Camera (object):
         self.size = {'width': 0, 'height': 0}
 
     def capture(self, filename):
-        pass
+        return None

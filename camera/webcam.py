@@ -35,7 +35,7 @@ class WebCam (camera.Camera):
             filename = conf_file.name
         else:
             filename = conf_file
-        self.command = 'fswebcam -c '+ filename + ' --save ' + self.path
+        self.command = 'fswebcam -c '+ filename
 #        self.command = 'fswebcam --save ' + self.path
 
     def capture(self, filename=None):
@@ -45,7 +45,7 @@ class WebCam (camera.Camera):
         output=None
         errOut=None
         logger.info('capture')
-        command = self.command + filename
+        command = self.command + ' --save ' + filename
         logger.debug('command: ' + command)
 
         try:
@@ -66,6 +66,7 @@ class WebCam (camera.Camera):
         if success==0:
             raise CameraException("fswebcam failed.")
         logger.debug('capture ended ('+str(success) + ')')
+        return filename
 
     @staticmethod
     def factory (conf_vars):

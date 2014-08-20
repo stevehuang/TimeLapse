@@ -2,8 +2,10 @@ import common.log as logging
 #from camera.camera import WebCam
 #from camera.camera import CameraException
 import camera.camera_manager as cameraManager
+import classifier.prediction_manager as predictionManager
 import ConfigParser
 import common.config as Conf
+import classifier.predictImage as predictImage
 
 Options = [
     Conf.DirOpt(name='working_directory',
@@ -11,11 +13,11 @@ Options = [
                 group='app',
                 default="$HOME/.garageeye/",
                 help = 'folder for application data'),
-    Conf.DirOpt(name='photo_directory',
+    Conf.FileOpt(name='photo_file',
                 short   = 'p',
                 group   = 'app',
-                default = "$HOME/Pictures/GarageEye/",
-                help    = 'folder for pictures taken'),
+                default = "$HOME/.garageeye/snapshot.jpg",
+                help    = 'output file for the photo taken'),
     Conf.IntOpt(name    = 'timeout_level1',
                 group   = 'app',
                 default = 10,
@@ -43,7 +45,11 @@ Options = [
     Conf.FileOpt(name    = 'log_file',
                  group   = 'app',
                  default = None,
-                 help    = 'log file to output data to')
+                 help    = 'log file to output data to'),
+    Conf.ListOpt(name    = 'classifier',
+                 group   = 'app',
+                 default = ['predict_NN'],
+                 help    = 'name of the predicter to use'),
 ]
 
 logger = logging.getLogger()
@@ -55,7 +61,6 @@ class GarageEyeManager (object):
     MAIN_SECTION="app"
     LOG_LEVEL="log_level"
     APP_DIRECTORY="working_directory"
-    PHOTO_DIRECTORY="photo_directory"
     TIMEOUT_1 = "timeout_level1"
     TIMEOUT_2 = "timeout_level2"
 
@@ -65,20 +70,32 @@ class GarageEyeManager (object):
         self.camera_manager = cameraManager.CameraManager()
         self.camera = None
         self.app_directory = self.APP_DIRECTORY
-        self.photo_directory = self.PHOTO_DIRECTORY
         self.timeout_1 = self.TIMEOUT_1
         self.timeout_2 = self.TIMEOUT_2
         self.config = None
+        self.prediction_manager = predictionManager.PredictionManager()
+        self.photo_file = CONF.importOpt(module='garage_eye_manager', name='photo_file', group='app')
 
     def pre_hook (self):
         self.camera_manager.setup()
         camera_name= CONF.importOpt(module='garage_eye_manager', name='camera', group='app')
         self.camera = self.camera_manager.get_camera(camera_name[0])
 
+        self.prediction_manager.setup()
+        predictor_name= CONF.importOpt(module='garage_eye_manager', name='classifier', group='app')
+        self.predicter = self.prediction_manager.get(predictor_name[0])
 
+
+# main run loop for the garage eye application
+# - take a snap shot
+# - check if the garage is opened / closed
+# - if opened more then timeout_level1, send notification
+# - if opened more then timeout_level2 and timeout_level1 occurred, send notification
+# - post picture to cloud if enabled
     def run (self):
         if (self.camera is not None):
             try:
-                self.camera.capture("snapshot.jpg")
+                filename = self.camera.capture(self.photo_file)
+                self.predicter.predict(filename)
             except CameraException as ex:
                 logger.info(ex.reason)
