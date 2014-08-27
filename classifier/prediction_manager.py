@@ -19,6 +19,7 @@ def call_use_function (use_name, conf_vars):
 class PredictionManager (object):
     def __init__ (self):
         self.predicters = dict()
+        self.trainers=dict()
 
     def setup (self):
         # get list of predicters
@@ -32,6 +33,16 @@ class PredictionManager (object):
                 conf_vars[name]= CONF.importOpt(module='classifier', name=name, group=groupName)
             self.predicters[predicter_name] = call_use_function(use, conf_vars)
 
+        # get list of trainers
+        trainer_names= CONF.importOpt(module='garage_eye_manager', name='trainer', group='app')
+        for trainer_name in trainer_names:
+            groupName = 'trainer.' + trainer_name
+            use = CONF.importOpt(module='classifier', name='use', group=groupName)
+            name_list = CONF.get_opt_list(groupName)
+            conf_vars = dict()
+            for name in name_list:
+                conf_vars[name]= CONF.importOpt(module='classifier', name=name, group=groupName)
+            self.trainers[trainer_name] = call_use_function(use, conf_vars)
 
     def get (self, name):
         if name in self.predicters:

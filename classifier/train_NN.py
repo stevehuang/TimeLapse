@@ -20,7 +20,20 @@ import errno
 
 import scipy.optimize as optimize
 
+Options = [
+    Conf.StrOpt(name    = 'use',
+                group   = 'trainer.Train_NN',
+                default = 'classifier.train_NN:Train_NN.factory',
+                help    = 'point to the neural network object used to train NN'),
+    Conf.FileOpt(name    = 'file_path',
+                 group   = 'trainer.Train_NN',
+                 default = '$HOME/.garageeye/data',
+                 help    = 'absolute path to image path'),
+]
+
 logger = logging.getLogger()
+CONF = Conf.Config
+CONF.registerOpt(Options)
 
 input_layer_size = 320*220
 hidden_layer_size = 50
@@ -109,7 +122,7 @@ def nnCostFunction (initial_theta, *args):
     return J.A1
 
 # class that runs a Neural Network
-class train_NN (object):
+class Train_NN (object):
     def __init__ (self):
         self.args = None
 
@@ -188,3 +201,8 @@ class train_NN (object):
         accuracy = numpy.mean((y>0.5)==resultsMatrix)
         logger.debug("Accuracy is about " + str(accuracy))
         logger.info("Training NN completed")
+
+    @staticmethod
+    def factory (conf_vars):
+        return Train_NN()
+

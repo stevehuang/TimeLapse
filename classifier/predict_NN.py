@@ -121,6 +121,10 @@ class Predicter_NN (predict.Predicter):
             logger.debug(filename + "\t(" + str(confidence[0,0]) + ") \t[opened]")
         return confidence
 
+    # 3 layer NN
+    # 320x240 array input layer
+    # 50 node hidden layer
+    # 1 output layer
     def calculateSigmoid(self, Theta1, Theta2, X):
         m = X.shape[0]
         num_labels = Theta2.shape[0]
