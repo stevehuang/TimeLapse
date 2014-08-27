@@ -47,4 +47,6 @@ class PredictionManager (object):
     def get (self, name):
         if name in self.predicters:
             return self.predicters[name]
+        if name in self.trainers:
+            return self.trainers[name]
 

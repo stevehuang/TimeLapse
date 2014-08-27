@@ -5,7 +5,7 @@ import camera.camera_manager as cameraManager
 import classifier.prediction_manager as predictionManager
 import ConfigParser
 import common.config as Conf
-import classifier.predictImage as predictImage
+import classifier.train_NN as trainNN
 
 Options = [
     Conf.DirOpt(name='working_directory',
@@ -48,8 +48,12 @@ Options = [
                  help    = 'log file to output data to'),
     Conf.ListOpt(name    = 'classifier',
                  group   = 'app',
-                 default = ['predict_NN'],
+                 default = ['Predict_NN'],
                  help    = 'name of the predicter to use'),
+    Conf.ListOpt(name    = 'trainer',
+                 group   = 'app',
+                 default = ['Train_NN'],
+                 help    = 'name of the training obj to use'),
 ]
 
 logger = logging.getLogger()
@@ -86,7 +90,12 @@ class GarageEyeManager (object):
         self.predicter = self.prediction_manager.get(predictor_name[0])
 
 
+        self.prediction_manager.setup()
+        trainer_name = CONF.importOpt(module='garage_eye_manager', name='classifier', group='app')
+        self.trainer = self.prediction_manager.get(trainer_name[0])
+
 # main run loop for the garage eye application
+#
 # - take a snap shot
 # - check if the garage is opened / closed
 # - if opened more then timeout_level1, send notification
@@ -96,6 +105,7 @@ class GarageEyeManager (object):
         if (self.camera is not None):
             try:
                 filename = self.camera.capture(self.photo_file)
-                self.predicter.predict(filename)
+                if filename is not None:
+                    self.predicter.predict(filename)
             except CameraException as ex:
                 logger.info(ex.reason)
