@@ -96,6 +96,8 @@ class GarageEyeManager (object):
         trainer_name = CONF.importOpt(module='garage_eye_manager', name='trainer', group='app')
         self.trainer = self.prediction_manager.get(trainer_name[0])
 
+    # look at trainer.Train_NN.path + TrainingSet/day/openned directory and closed directory
+    # construct a training set from these files
     def train_set (self):
         img_path = CONF.importOpt(module='classifier.train_NN', name='path', group='trainer.Train_NN')
         opened_path = os.path.join(img_path, "TrainingSet/day/opened")
