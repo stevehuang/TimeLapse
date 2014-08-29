@@ -6,6 +6,8 @@ import classifier.prediction_manager as predictionManager
 import ConfigParser
 import common.config as Conf
 import classifier.train_NN as trainNN
+import os
+import re
 
 Options = [
     Conf.DirOpt(name='working_directory',
@@ -91,8 +93,26 @@ class GarageEyeManager (object):
 
 
         self.prediction_manager.setup()
-        trainer_name = CONF.importOpt(module='garage_eye_manager', name='classifier', group='app')
+        trainer_name = CONF.importOpt(module='garage_eye_manager', name='trainer', group='app')
         self.trainer = self.prediction_manager.get(trainer_name[0])
+
+    def train_set (self):
+        img_path = CONF.importOpt(module='classifier.train_NN', name='path', group='trainer.Train_NN')
+        opened_path = os.path.join(img_path, "TrainingSet/day/opened")
+        closed_path = os.path.join(img_path, "TrainingSet/day/closed")
+
+        files_list = list()
+        results_list = list()
+        # get each file in path. Add jpg to the list
+        for file in os.listdir(closed_path) :
+            if re.search(r"(.+)\.jpg", file) is not None:
+                files_list.append(os.path.join(closed_path,file))
+                results_list.append(1)
+        for file in os.listdir(opened_path) :
+            if re.search(r"(.+)\.jpg", file) is not None:
+                files_list.append(os.path.join(opened_path,file))
+                results_list.append(0)
+        self.trainer.train(files_list, results_list)
 
 # main run loop for the garage eye application
 #
