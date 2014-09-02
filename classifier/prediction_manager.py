@@ -1,7 +1,10 @@
 import common.config as Conf
+import common.log as logging
+
 import predict_NN
 
 CONF = Conf.Config
+logger = logging.getLogger()
 
 
 def import_module_object (use_name):
@@ -42,6 +45,7 @@ class PredictionManager (object):
             conf_vars = dict()
             for name in name_list:
                 conf_vars[name]= CONF.importOpt(module='classifier', name=name, group=groupName)
+            logger.info("Call trainer and init the class")
             self.trainers[trainer_name] = call_use_function(use, conf_vars)
 
     def get (self, name):

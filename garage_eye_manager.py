@@ -8,6 +8,7 @@ import common.config as Conf
 import classifier.train_NN as trainNN
 import os
 import re
+import service.process as process
 
 Options = [
     Conf.DirOpt(name='working_directory',
@@ -81,6 +82,7 @@ class GarageEyeManager (object):
         self.config = None
         self.prediction_manager = predictionManager.PredictionManager()
         self.photo_file = CONF.importOpt(module='garage_eye_manager', name='photo_file', group='app')
+        self.trainingDone = False
 
     def pre_hook (self):
         self.camera_manager.setup()
@@ -91,12 +93,10 @@ class GarageEyeManager (object):
         predictor_name= CONF.importOpt(module='garage_eye_manager', name='classifier', group='app')
         self.predicter = self.prediction_manager.get(predictor_name[0])
 
-
-        self.prediction_manager.setup()
         trainer_name = CONF.importOpt(module='garage_eye_manager', name='trainer', group='app')
         self.trainer = self.prediction_manager.get(trainer_name[0])
 
-    # look at trainer.Train_NN.path + TrainingSet/day/openned directory and closed directory
+    # look at trainer.Train_NN.path + TrainingSet/day/opened directory and closed directory
     # construct a training set from these files
     def train_set (self):
         img_path = CONF.importOpt(module='classifier.train_NN', name='path', group='trainer.Train_NN')
@@ -124,6 +124,18 @@ class GarageEyeManager (object):
 # - if opened more then timeout_level2 and timeout_level1 occurred, send notification
 # - post picture to cloud if enabled
     def run (self):
+        logger.debug("(1) self.trainingDone set to " + str(self.trainingDone))
+        if self.trainingDone == False:
+            pid = os.fork()
+            if pid == 0:
+                status = 0
+                proc = process.ProcessLauncher()
+                logger.debug("(2) self.trainingDone set to " + str(self.trainingDone))
+                proc.launch_service(self.trainer, 1)
+                os._exit(status)
+        self.trainingDone = True
+        logger.debug("(3) self.trainingDone set to " + str(self.trainingDone))
+                
         if (self.camera is not None):
             try:
                 filename = self.camera.capture(self.photo_file)

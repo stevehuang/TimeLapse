@@ -17,6 +17,7 @@ from scipy import optimize
 import Image
 import sys
 import errno
+from service import service
 
 import scipy.optimize as optimize
 
@@ -122,9 +123,46 @@ def nnCostFunction (initial_theta, *args):
     return J.A1
 
 # class that runs a Neural Network
-class Train_NN (object):
-    def __init__ (self):
+class Train_NN (service.Service):
+
+    def __init__(self, path):
+        super(Train_NN, self).__init__()
+        self.img_path = path
+        logger.debug("Img_path = " + str(self.img_path))
         self.args = None
+
+    def start(self):
+        """
+            service.Services.run_service will call this to start the service.
+            This function will add a periodic_timer call to tg (thread groups).
+            add_periodic_timer spawns a new gt which will be run at a certain
+            time interval
+        """
+        logger.info("started Training process")
+        self.train_set()
+        logger.info("ending Training process")
+
+    def stop(self):
+        pass
+
+
+    def train_set (self):
+        #img_path = CONF.importOpt(module='classifier.train_NN', name='path', group='trainer.Train_NN')
+        opened_path = path.join(self.img_path, "TrainingSet/day/opened")
+        closed_path = path.join(self.img_path, "TrainingSet/day/closed")
+
+        files_list = list()
+        results_list = list()
+        # get each file in path. Add jpg to the list
+        for file in listdir(closed_path) :
+            if search(r"(.+)\.jpg", file) is not None:
+                files_list.append(os.path.join(closed_path,file))
+                results_list.append(1)
+        for file in listdir(opened_path) :
+            if search(r"(.+)\.jpg", file) is not None:
+                files_list.append(os.path.join(opened_path,file))
+                results_list.append(0)
+        self.train(files_list, results_list)
 
     # load jpeg image and convert to greyscale
     def load_image (self, filename):
@@ -191,7 +229,7 @@ class Train_NN (object):
         initial_nn_parameters = numpy.concatenate((Theta1.flatten('F'), Theta2.flatten('F')))
 
         self.args = (imageMatrix, resultsMatrix)
-        thetas = optimize.fmin_cg(nnCostFunction, initial_nn_parameters, fprime=nnGradCostFunction, args=self.args, maxiter=16, callback=self.callbackIterationDone)
+        thetas = optimize.fmin_cg(nnCostFunction, initial_nn_parameters, fprime=nnGradCostFunction, args=self.args, maxiter=5, callback=self.callbackIterationDone)
         #thetas = initial_nn_parameters
         # roll the theta together
         border = hidden_layer_size*(input_layer_size+1)
@@ -204,5 +242,5 @@ class Train_NN (object):
 
     @staticmethod
     def factory (conf_vars):
-        return Train_NN()
+        return Train_NN(conf_vars['path'])
 
