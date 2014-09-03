@@ -40,6 +40,8 @@ input_layer_size = 320*220
 hidden_layer_size = 50
 output_layer_size  = 1
 
+max_iterations = 16
+
 def sigmoid (x):
     y = 1.0 / (1.0 + numpy.exp(-1.0*x))
     return y
@@ -130,20 +132,23 @@ class Train_NN (service.Service):
         self.img_path = path
         logger.debug("Img_path = " + str(self.img_path))
         self.args = None
+        self.iterCount = 1
 
     def start(self):
         """
             service.Services.run_service will call this to start the service.
-            This function will add a periodic_timer call to tg (thread groups).
-            add_periodic_timer spawns a new gt which will be run at a certain
-            time interval
+            This should be called from a processLauncher on a different (detached)
+            process because at the end of this function the process will be killed
         """
         logger.info("started Training process")
         self.train_set()
+        self.stop()
         logger.info("ending Training process")
+        # kill the process that runs this
+        os.kill(os.getppid(), signal.SIGKILL)
 
     def stop(self):
-        pass
+        super(Train_NN, self).stop()
 
 
     def train_set (self):
@@ -188,10 +193,10 @@ class Train_NN (service.Service):
         return h2
 
     def callbackIterationDone (self, xk):
-        print "Iteration completed"
         x,y = self.args
         J = nnCostFunction(xk, x,y)
-        print "Cost J is " + str(J)
+        logger.debug("Iteration completed [" + str(self.iterCount) + "] cost J = " + str(J))
+        self.iterCount = self.iterCount + 1
 
     # Input a list of images, list of their states [closed/open]
     # note, image size is 320*220
@@ -229,7 +234,7 @@ class Train_NN (service.Service):
         initial_nn_parameters = numpy.concatenate((Theta1.flatten('F'), Theta2.flatten('F')))
 
         self.args = (imageMatrix, resultsMatrix)
-        thetas = optimize.fmin_cg(nnCostFunction, initial_nn_parameters, fprime=nnGradCostFunction, args=self.args, maxiter=5, callback=self.callbackIterationDone)
+        thetas = optimize.fmin_cg(nnCostFunction, initial_nn_parameters, fprime=nnGradCostFunction, args=self.args, maxiter=max_iterations, callback=self.callbackIterationDone)
         #thetas = initial_nn_parameters
         # roll the theta together
         border = hidden_layer_size*(input_layer_size+1)

@@ -9,6 +9,7 @@ import classifier.train_NN as trainNN
 import os
 import re
 import service.process as process
+import signal
 
 Options = [
     Conf.DirOpt(name='working_directory',
@@ -124,17 +125,21 @@ class GarageEyeManager (object):
 # - if opened more then timeout_level2 and timeout_level1 occurred, send notification
 # - post picture to cloud if enabled
     def run (self):
-        logger.debug("(1) self.trainingDone set to " + str(self.trainingDone))
         if self.trainingDone == False:
             pid = os.fork()
             if pid == 0:
                 status = 0
-                proc = process.ProcessLauncher()
-                logger.debug("(2) self.trainingDone set to " + str(self.trainingDone))
-                proc.launch_service(self.trainer, 1)
+                try:
+                    proc = process.ProcessLauncher()
+                    proc.launch_service(self.trainer, 1)
+                    proc.wait()
+                except SystemExit as ex:
+                    status = ex.code
+                # exit os
                 os._exit(status)
+
         self.trainingDone = True
-        logger.debug("(3) self.trainingDone set to " + str(self.trainingDone))
+        #os.kill(pid, signal.SIGKILL)
                 
         if (self.camera is not None):
             try:

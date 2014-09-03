@@ -292,7 +292,6 @@ class Service(object):
     Send the tg kill to the threads/timers. The period loops are killed from the service.
     """
     def stop(self):
-        print (self)
         self.tg.stop()
         self.tg.wait()
         """
@@ -302,7 +301,7 @@ class Service(object):
         """
         if not self._done.ready():
             # ready returns true if wait will return immediately
-            # so if false, then tell _done.wait to return
+            # if false, then tell _done.wait to return
             self._done.send()
 
     """

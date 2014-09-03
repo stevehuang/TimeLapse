@@ -169,8 +169,7 @@ class ProcessLauncher(object):
                 status, signo = self._child_wait_for_exit_or_signal(launcher)
                 if not _is_sighup_and_daemon(signo):
                     break
-                launcher.restart()
-
+                logger.info("restarting")
             os._exit(status)
           # end forked process
 
