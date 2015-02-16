@@ -125,18 +125,18 @@ class GarageEyeManager (object):
 # - if opened more then timeout_level2 and timeout_level1 occurred, send notification
 # - post picture to cloud if enabled
     def run (self):
-        if self.trainingDone == False:
-            pid = os.fork()
-            if pid == 0:
-                status = 0
-                try:
-                    proc = process.ProcessLauncher()
-                    proc.launch_service(self.trainer, 1)
-                    proc.wait()
-                except SystemExit as ex:
-                    status = ex.code
-                # exit os
-                os._exit(status)
+#         if self.trainingDone == False:
+#             pid = os.fork()
+#             if pid == 0:
+#                 status = 0
+#                 try:
+#                     proc = process.ProcessLauncher()
+#                     proc.launch_service(self.trainer, 1)
+#                     proc.wait()
+#                 except SystemExit as ex:
+#                     status = ex.code
+#                 # exit os
+#                 os._exit(status)
 
         self.trainingDone = True
         #os.kill(pid, signal.SIGKILL)
@@ -145,6 +145,7 @@ class GarageEyeManager (object):
             try:
                 filename = self.camera.capture(self.photo_file)
                 if filename is not None:
+                    logger.debug("filename = "  + filename + "\n")
                     self.predicter.predict(filename)
             except CameraException as ex:
                 logger.info(ex.reason)

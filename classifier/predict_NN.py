@@ -13,8 +13,6 @@ from scipy import io
 from shutil import move
 import numpy
 import Image
-import sys
-import errno
 
 
 Options = [
@@ -83,6 +81,7 @@ class Predicter_NN (predict.Predicter):
             x=io.loadmat(self.mat_file, None, False)
         except:
             logger.error("Load mat failed")
+            logger.debug("Load mat file path set to:" + str(self.mat_file))
             return 0
 
         Theta1 = x['Theta1']

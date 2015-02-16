@@ -88,7 +88,7 @@ class Service(service.Service):
 _launcher = None
 
 """
-  Launch a service (service_tobelaunched). One one launcher can be defined.
+  Launch a service (service_tobelaunched). Only one launcher can be defined.
   So this function can be used once. If another service is needed, use the _launcher
   variable (or return val).
   you can do launcher.launch_service(service)
