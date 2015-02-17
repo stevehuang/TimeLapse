@@ -1,18 +1,20 @@
 import common.log as logging
 import common.config as Conf
-import os, sys, signal, errno
+import os
+#signal, errno
 import predict
 
 from time import localtime
-from datetime import datetime, date, timedelta, time
-from re import search
-from os import listdir, path, makedirs
+from datetime import time
+from re import match
+#from os import listdir, path, makedirs
 from exceptions import RuntimeWarning
 from warnings import simplefilter
 from scipy import io
-from shutil import move
+#from shutil import move
 import numpy
 import Image
+from sys import _getframe
 
 
 Options = [
@@ -133,20 +135,32 @@ class Predicter_NN (predict.Predicter):
         return h2
 
     def predictImage (self, filename):
-        dayTime = True
-        if (dayTime==True):
-            confidence = self.dayPredict(filename)
+        def _isDayTime(currentTime):
+          dt = time(hour = currentTime[0], minute = currentTime[1])
+          sunrise = time(hour=6, minute=0)
+          sunset = time(hour=18, minute=0)
+          return ((dt > sunrise) and (dt < sunset))
+        
+        # get the current local time and extract the hour, min
+        currTime = localtime()[3:5]
+        (path, file) = os.path.split(filename)
+        matobj = match(r"(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})_(\d{2}).jpg", file)
+        if matobj is not None:
+          currTime = (int(matobj.group(4)), int(matobj.group(5)))
+          
+        if _isDayTime(currTime):
+          confidence = self.dayPredict(filename)
         else:
-            confidence = self.nightPredict(filename)
+          confidence = self.nightPredict(filename)
 
         closed = True
         if confidence < 0.5:
-            closed = False
+          closed = False
 
         return (closed, confidence)
 
     def predict(self, filename):
-        logger.debug("predicter_NN called")
+        logger.debug(_getframe().f_code.co_name + ' called')
         self.predictImage(filename)
 
     @staticmethod
