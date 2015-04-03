@@ -94,8 +94,8 @@ class GarageEyeManager (object):
         predictor_name= CONF.importOpt(module='garage_eye_manager', name='classifier', group='app')
         self.predicter = self.prediction_manager.get(predictor_name[0])
 
-        trainer_name = CONF.importOpt(module='garage_eye_manager', name='trainer', group='app')
-        self.trainer = self.prediction_manager.get(trainer_name[0])
+        #trainer_name = CONF.importOpt(module='garage_eye_manager', name='trainer', group='app')
+        #self.trainer = self.prediction_manager.get(trainer_name[0])
 
     # look at trainer.Train_NN.path + TrainingSet/day/opened directory and closed directory
     # construct a training set from these files
@@ -125,19 +125,6 @@ class GarageEyeManager (object):
 # - if opened more then timeout_level2 and timeout_level1 occurred, send notification
 # - post picture to cloud if enabled
     def run (self):
-#         if self.trainingDone == False:
-#             pid = os.fork()
-#             if pid == 0:
-#                 status = 0
-#                 try:
-#                     proc = process.ProcessLauncher()
-#                     proc.launch_service(self.trainer, 1)
-#                     proc.wait()
-#                 except SystemExit as ex:
-#                     status = ex.code
-#                 # exit os
-#                 os._exit(status)
-
         self.trainingDone = True
         #os.kill(pid, signal.SIGKILL)
                 

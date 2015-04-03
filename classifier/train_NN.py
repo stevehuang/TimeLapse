@@ -127,12 +127,14 @@ def nnCostFunction (initial_theta, *args):
 # class that runs a Neural Network
 class Train_NN (service.Service):
 
-    def __init__(self, path):
+    def __init__(self, path, periodic_enable=None, periodic_interval_max=None, *args, **kwargs):
         super(Train_NN, self).__init__()
         self.img_path = path
         logger.debug("Img_path = " + str(self.img_path))
         self.args = None
         self.iterCount = 1
+        self.periodic_enable = periodic_enable
+        self.periodic_interval_max = periodic_interval_max
 
     def start(self):
         """
@@ -140,16 +142,52 @@ class Train_NN (service.Service):
             This should be called from a processLauncher on a different (detached)
             process because at the end of this function the process will be killed
         """
-        logger.info("started Training process")
-        self.train_set()
-        self.stop()
-        logger.info("ending Training process")
+        #logger.info("started Training process")
+        #self.train_set()
+        #self.stop()
+        #logger.info("ending Training process")
         # kill the process that runs this
-        os.kill(os.getppid(), signal.SIGKILL)
+        #os.kill(os.getppid(), signal.SIGKILL)
+        """
+        service.Services.run_service will call this to start the service.
+        This function will add a periodic_timer call to tg (thread groups).
+        add_periodic_timer spawns a new gt which will be run at a certain
+        time interval
+        """
+        logger.info("started")
+
+        if self.periodic_enable:
+            self.tg.add_periodic_timer(self.periodic_tasks,
+                                     initial_delay=1.0,
+                                     periodic_interval_max=self.periodic_interval_max)
+
+    @classmethod
+    def create(cls, periodic_enable=None, periodic_interval_max=None):
+        """Instantiates class and passes back application object.
+
+        :param periodic_enable: defaults to CONF.periodic_enable
+        :param periodic_interval_max: if set, the max time to wait between runs
+
+        """
+        img_path = CONF.importOpt(module='classifier.train_NN', name='path', group='trainer.Train_NN')
+        service_obj = cls(img_path,
+                          periodic_enable=periodic_enable,
+                          periodic_interval_max=periodic_interval_max
+                          )
+
+        return service_obj
 
     def stop(self):
         super(Train_NN, self).stop()
 
+    def periodic_tasks(self, raise_on_error=False):
+        """
+        Tasks to be run at a periodic interval.
+        """
+        logger.info("Train_NN: periodic_tasks running")
+
+        # return time to sleep for
+        return (5.0);
 
     def train_set (self):
         #img_path = CONF.importOpt(module='classifier.train_NN', name='path', group='trainer.Train_NN')

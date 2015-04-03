@@ -12,7 +12,9 @@ Main module to initiate the application.
 """
 import sys
 import garage_eye_service
-#from service.process import ProcessLauncher
+from service.process import ProcessLauncher
+#import classifier.prediction_manager as predictionManager
+from classifier.train_NN import Train_NN
 import common.log as logging
 import common.config as Conf
 import os, sys, signal, errno
@@ -85,12 +87,21 @@ Entry point for GarageEye python application
 def main():
     CONF.parseArgs(sys.argv[1:])
     logging.setup(name="garage_eye", level=CONF.log_level, conf_file=CONF.log_file)
+    launcher = ProcessLauncher()
     # create a service class
     main_service = garage_eye_service.Service.create(True, float(10.0))
     # launch a service (first GT) which in turn will launch the periodic calls
-    garage_eye_service.launch_service(main_service)
+    #garage_eye_service.launch_service(main_service)
+    predictor_service = Train_NN.create(True, float(5.0))
+
+    launcher.launch_service(main_service)
+    launcher.launch_service(predictor_service)
+
+    #trainer_name = CONF.importOpt(module='garage_eye_manager', name='trainer', group='app')
+    #self.trainer = self.prediction_manager.get(trainer_name[0])
     # a green thread wait, which calls ServiceLauncher.wait and waits for exit signal
-    garage_eye_service.wait()
+    #garage_eye_service.wait()
+    launcher.wait()
 
 
 if __name__ == "__main__":
