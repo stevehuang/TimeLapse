@@ -1,6 +1,7 @@
 """
 Author: Steve Huang (huangwSteve@hotmail.com)
 Initial Date: July 2014
+Last Update: April 2015
 Module Description:
 
 Main module to initiate the application.
@@ -11,10 +12,8 @@ Main module to initiate the application.
 - GT means green thread
 """
 import sys
-import garage_eye_service
+import time_lapse_service
 from service.process import ProcessLauncher
-#import classifier.prediction_manager as predictionManager
-from classifier.train_NN import Train_NN
 import common.log as logging
 import common.config as Conf
 import os, sys, signal, errno
@@ -26,12 +25,12 @@ Options = [ Conf.StrOpt(name='group',
                         help='the group name'),
             Conf.FileOpt(name='config_file',
                          short='f',
-                         default='./garageCam.conf',
-                         help='configuration file used by GarageEye program')
+                         default='./timeLapse.conf',
+                         help='configuration file used by program')
           ]
 CONF.registerOpt(Options)
-CONF.importOpt(module='garage_eye_manager', name='log_level')
-CONF.importOpt(module='garage_eye_manager', name='log_file')
+CONF.importOpt(module='time_lapse_manager', name='log_level')
+CONF.importOpt(module='time_lapse_manager', name='log_file')
 logger = logging.getLogger()
 
 """
@@ -75,7 +74,7 @@ def daemonize(chdir='/'):
     os.dup2(os.open(os.devnull, os.O_RDWR), sys.stderr.fileno())
 
 '''
-Entry point for GarageEye python application
+Entry point for python application
   - parse the arguments (usually it's a pointer to conf file)
   - setup the logging information based on the parsed arguments
   - create a service and launch it.
@@ -86,25 +85,18 @@ Entry point for GarageEye python application
 '''
 def main():
     CONF.parseArgs(sys.argv[1:])
-    logging.setup(name="garage_eye", level=CONF.log_level, conf_file=CONF.log_file)
+    logging.setup(name="time_lapse", level=CONF.log_level, conf_file=CONF.log_file)
     launcher = ProcessLauncher()
     # create a service class
-    main_service = garage_eye_service.Service.create(True, float(10.0))
+    main_service = time_lapse_service.Service.create(True, float(10.0))
     # launch a service (first GT) which in turn will launch the periodic calls
-    #garage_eye_service.launch_service(main_service)
-    predictor_service = Train_NN.create(True, float(5.0))
 
     launcher.launch_service(main_service)
-    launcher.launch_service(predictor_service)
-
-    #trainer_name = CONF.importOpt(module='garage_eye_manager', name='trainer', group='app')
-    #self.trainer = self.prediction_manager.get(trainer_name[0])
     # a green thread wait, which calls ServiceLauncher.wait and waits for exit signal
-    #garage_eye_service.wait()
     launcher.wait()
 
 
 if __name__ == "__main__":
-#    daemonize('/home/huanghst/workspace/GarageEye')
+#    daemonize('/home/huanghst/workspace/TimeLapse')
     main()
 

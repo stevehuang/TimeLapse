@@ -2,10 +2,8 @@ import common.log as logging
 #from camera.camera import WebCam
 #from camera.camera import CameraException
 import camera.camera_manager as cameraManager
-import classifier.prediction_manager as predictionManager
 import ConfigParser
 import common.config as Conf
-import classifier.train_NN as trainNN
 import os
 import re
 import service.process as process
@@ -15,12 +13,12 @@ Options = [
     Conf.DirOpt(name='working_directory',
                 short='w',
                 group='app',
-                default="$HOME/.garageeye/",
+                default="$HOME/.timelapse/",
                 help = 'folder for application data'),
     Conf.FileOpt(name='photo_file',
                 short   = 'p',
                 group   = 'app',
-                default = "$HOME/.garageeye/snapshot.jpg",
+                default = "$HOME/.timelapse/snapshot.jpg",
                 help    = 'output file for the photo taken'),
     Conf.IntOpt(name    = 'timeout_level1',
                 group   = 'app',
@@ -49,22 +47,14 @@ Options = [
     Conf.FileOpt(name    = 'log_file',
                  group   = 'app',
                  default = None,
-                 help    = 'log file to output data to'),
-    Conf.ListOpt(name    = 'classifier',
-                 group   = 'app',
-                 default = ['Predict_NN'],
-                 help    = 'name of the predicter to use'),
-    Conf.ListOpt(name    = 'trainer',
-                 group   = 'app',
-                 default = ['Train_NN'],
-                 help    = 'name of the training obj to use'),
+                 help    = 'log file to output data to')
 ]
 
 logger = logging.getLogger()
 CONF = Conf.Config
 CONF.registerOpt(Options)
 
-class GarageEyeManager (object):
+class TimeLapseManager (object):
 
     MAIN_SECTION="app"
     LOG_LEVEL="log_level"
@@ -81,49 +71,17 @@ class GarageEyeManager (object):
         self.timeout_1 = self.TIMEOUT_1
         self.timeout_2 = self.TIMEOUT_2
         self.config = None
-        self.prediction_manager = predictionManager.PredictionManager()
-        self.photo_file = CONF.importOpt(module='garage_eye_manager', name='photo_file', group='app')
+        self.photo_file = CONF.importOpt(module='time_lapse_manager', name='photo_file', group='app')
         self.trainingDone = False
 
     def pre_hook (self):
         self.camera_manager.setup()
-        camera_name= CONF.importOpt(module='garage_eye_manager', name='camera', group='app')
+        camera_name= CONF.importOpt(module='time_lapse_manager', name='camera', group='app')
         self.camera = self.camera_manager.get_camera(camera_name[0])
 
-        self.prediction_manager.setup()
-        predictor_name= CONF.importOpt(module='garage_eye_manager', name='classifier', group='app')
-        self.predicter = self.prediction_manager.get(predictor_name[0])
-
-        #trainer_name = CONF.importOpt(module='garage_eye_manager', name='trainer', group='app')
-        #self.trainer = self.prediction_manager.get(trainer_name[0])
-
-    # look at trainer.Train_NN.path + TrainingSet/day/opened directory and closed directory
-    # construct a training set from these files
-    def train_set (self):
-        img_path = CONF.importOpt(module='classifier.train_NN', name='path', group='trainer.Train_NN')
-        opened_path = os.path.join(img_path, "TrainingSet/day/opened")
-        closed_path = os.path.join(img_path, "TrainingSet/day/closed")
-
-        files_list = list()
-        results_list = list()
-        # get each file in path. Add jpg to the list
-        for file in os.listdir(closed_path) :
-            if re.search(r"(.+)\.jpg", file) is not None:
-                files_list.append(os.path.join(closed_path,file))
-                results_list.append(1)
-        for file in os.listdir(opened_path) :
-            if re.search(r"(.+)\.jpg", file) is not None:
-                files_list.append(os.path.join(opened_path,file))
-                results_list.append(0)
-        self.trainer.train(files_list, results_list)
-
-# main run loop for the garage eye application
+# main run loop for the application
 #
-# - take a snap shot
-# - check if the garage is opened / closed
-# - if opened more then timeout_level1, send notification
-# - if opened more then timeout_level2 and timeout_level1 occurred, send notification
-# - post picture to cloud if enabled
+
     def run (self):
         self.trainingDone = True
         #os.kill(pid, signal.SIGKILL)
@@ -133,6 +91,5 @@ class GarageEyeManager (object):
                 filename = self.camera.capture(self.photo_file)
                 if filename is not None:
                     logger.debug("filename = "  + filename + "\n")
-                    self.predicter.predict(filename)
             except CameraException as ex:
                 logger.info(ex.reason)

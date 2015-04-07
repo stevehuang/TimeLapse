@@ -26,7 +26,7 @@ class PredictionManager (object):
 
     def setup (self):
         # get list of predicters
-        predictor_names= CONF.importOpt(module='garage_eye_manager', name='classifier', group='app')
+        predictor_names= CONF.importOpt(module='time_lapse_manager', name='classifier', group='app')
         for predicter_name in predictor_names:
             groupName = 'classifier.' + predicter_name
             use = CONF.importOpt(module='classifier', name='use', group=groupName)
@@ -37,7 +37,7 @@ class PredictionManager (object):
             self.predicters[predicter_name] = call_use_function(use, conf_vars)
 
         # get list of trainers
-        trainer_names= CONF.importOpt(module='garage_eye_manager', name='trainer', group='app')
+        trainer_names= CONF.importOpt(module='time_lapse_manager', name='trainer', group='app')
         for trainer_name in trainer_names:
             groupName = 'trainer.' + trainer_name
             use = CONF.importOpt(module='classifier', name='use', group=groupName)

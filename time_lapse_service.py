@@ -7,14 +7,14 @@ Module Description:
 """
 from service import service
 import common.log as logging
-import garage_eye_manager
+import time_lapse_manager
 import ConfigParser
 
 logger = logging.getLogger()
 
 class Service(service.Service):
     """
-    Service object tailored for GarageEye application. It parent is in service.Service.
+    Service object tailored for application. It parent is in service.Service.
     The service launcher will use this obj as the main service.
 
     Some notes:
@@ -26,8 +26,7 @@ class Service(service.Service):
         super(Service, self).__init__()
         self.periodic_enable = periodic_enable
         self.periodic_interval_max = periodic_interval_max
-        # use the garageEyeManager obj
-        self.manager = garage_eye_manager.GarageEyeManager()
+        self.manager = time_lapse_manager.TimeLapseManager()
 
     def start(self):
         """
@@ -65,13 +64,12 @@ class Service(service.Service):
 
     def stop(self):
         # stop the service object
-        logger.info('garage_eye_service: stop()')
+        logger.info('time_lapse_service: stop()')
         super(Service, self).stop()
 
     def periodic_tasks(self, raise_on_error=False):
         """
         Tasks to be run at a periodic interval.
-        This calls the GarageEye manager obj
         """
         logger.info("periodic_tasks running")
         self.manager.run()

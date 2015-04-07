@@ -152,7 +152,7 @@ class ConfigOptions:
         self.groupOpts = dict()
         #self.args = list()
         self.parser = dict()
-        self.parser['app'] = argparse.ArgumentParser(description='options for GarageEye program', add_help=False)
+        self.parser['app'] = argparse.ArgumentParser(description='options for program', add_help=False)
         self.parser['app'].add_argument('-h', '--help', action='store_true', help='show this help message and exit', default=False)
 
     def __getattr__(self, name):
@@ -198,6 +198,7 @@ class ConfigOptions:
         for index, arg in enumerate(args):
             if arg == '--config_file' or arg.startswith('--config_file') or arg == '-c':
                 consume_conf=True
+                continue # consume the file conf argument
 
             if consume_conf==True and arg.endswith('.conf'):
                 items = self._parse_config_files_(args[index])
@@ -213,6 +214,7 @@ class ConfigOptions:
                 val = os.path.expandvars(val)
                 temp_args.append(val)
             else: # this means the conf file is not the right extension
+                #print("Warning!!")
                 logger.warning("Expected file with conf extension. File not parsed.")
 
 
@@ -222,11 +224,11 @@ class ConfigOptions:
         for arg in temp_args:
             if arg=="--group" or arg.startswith('--group') or arg=='-g':
                 group_found = True
-                print "group found"
+                #print "group found"
                 continue
             if group_found == True:
                 group_Name = arg
-                print "group name set to " + group_Name
+                #print "group name set to " + group_Name
                 group_found = False
                 continue
             if not group_Name in cli_args:
@@ -258,8 +260,10 @@ class ConfigOptions:
                 if self.groupOpts.has_key((groupname,name)):
                     self.groupOpts[(groupname,name)]._set_(value)
                 else:
-                    logger.warning("Missing key pair (%s, %s)" % (name,value)) # 'help' will not be here. it's expected
                     #print ("Missing key pair (%s, %s)" % (name,value))
+                    if (name != 'help'):
+                        logger.warning("Missing key pair (%s, %s)" % (name,value)) # 'help' will not be here. it's expected
+
         return known_args
 
     def _log_options_ (self):

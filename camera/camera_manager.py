@@ -22,7 +22,7 @@ class CameraManager (object):
 
     def setup (self):
         # get list of camera names
-        camera_names= CONF.importOpt(module='garage_eye_manager', name='camera', group='app')
+        camera_names= CONF.importOpt(module='time_lapse_manager', name='camera', group='app')
         # list of camera:names
         for cam_name in camera_names:
             groupName = 'camera.' + cam_name
