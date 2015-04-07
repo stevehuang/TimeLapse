@@ -1,7 +1,7 @@
-GarageEye
-=========
+TimeLapse
+==========
 
-Yes! Another raspberry-pi project to control a garage door using machine learning, webcam, and python
+Yes! Another raspberry-pi project to control a camera and take lots of pictures
 
 Need following packages/apps
 ============================
@@ -14,6 +14,6 @@ Getting Started
 =============== 
 1. clone git repository 
 2. in the working folder, fill in the parameters listed in the comments of
-garageCam.conf 
+timelapse.conf 
 3. to launch, go to your working folder, then run
-python garage_eye.py --config_file <full working directory>/garageCam.conf
+python time_lapse.py --config_file <full working directory>/timelapse.conf
