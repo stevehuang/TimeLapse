@@ -27,7 +27,7 @@ import sys
 import logging
 import logging.handlers
 
-DEFAULT_LOGGER_NAME='garage_eye'
+DEFAULT_LOGGER_NAME='time_lapse'
 
 def getLogger(name=DEFAULT_LOGGER_NAME):
     logger = logging.getLogger(name)
